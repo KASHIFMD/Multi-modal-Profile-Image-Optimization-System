@@ -1,0 +1,22 @@
+version: "3"
+services:
+  content_image_optimization_kf:
+    image: "content_image_optimization_kf"
+    # pull_policy: always
+    build: .
+    container_name: content_image_optimization_kf
+    restart: unless-stopped
+    privileged: true
+    network_mode: bridge
+    ports:
+      - "5008:5008"
+    environment:
+      - SERVER_IP=192.168.40.172
+      - PROCESS=content_image_optimization
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /home/mokashif/sandbox/project01/content_image_optimization/api:/opt/api:rw
+      - /var/log/images:/var/log/images:rw
+
+    tty: true
+

@@ -1,3 +1,14 @@
+.vscode/*
+*.zip
+*.tar.gz
+*.tar
+*.tar.xz
+setup.py
+**/__pycache__/*
+var
+/api/config.toml
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

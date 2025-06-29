@@ -1,0 +1,135 @@
+docker compose -f docker-compose.yml build
+docker compose -f docker-compose.yml up -d
+docker exec -it content_image_optimization_kf bash
+
+
+docker compose -f docker-compose_gpu.yml build
+docker compose -f docker-compose_gpu.yml up -d
+
+docker-compose -f docker-compose_cpu.yml build
+docker-compose -f docker-compose_cpu.yml up -d
+docker exec -it content_image_optimization_kf bash
+
+echo "nameserver 8.8.8.8" | sudo tee -a /etc/resolv.conf && \
+echo "nameserver 8.8.4.4" | sudo tee -a /etc/resolv.conf
+
+# Login to docker:
+docker exec -it <container_id_or_name> bash
+
+# Docker commands:
+docker-compose -f docker-compose.yml build
+docker-compose -f docker-compose.yml up -d 
+docker exec -ti imgrel bash
+
+streamlit run ui_api_without_tfidf.py --server.port 8501 --server.address 0.0.0.0
+streamlit run ui_api_with_tfidf.py --server.port 8502 --server.address 0.0.0.0
+streamlit run ui_api_with_tfidf_finetuned_15.py --server.port 8502 --server.address 0.0.0.0
+streamlit run ui_api_with_tfidf_finetuned.py --server.port 8503 --server.address 0.0.0.0
+
+
+# /main_dir/app/controllers/resp_img_desc.py
+cosumer for desc data of images from rabbitMQ queue "REQ_IMG_DESC_RESP" server "http://192.168.24.103/"
+
+# /main_dir/app/model_finetuned
+1. all-mpnet-base-v2 (pretrained model)
+2. all-mpnet-base-v2_870_overfit (finetuned on 870 words but overfitted)
+3. all-mpnet-base-v2_allowed_words (finetuned on 5 words with 15 data point per word, but overfitted)
+4. all-mpnet-base-v2_allowed_words_15 (finetuned on 5 words (mehendi, mehandi, ....)with 15 data point per word, works well)
+# /main_dir/app/model_pretrained
+
+# /main_dir/app/routes/fetch_categories_relevance.py
+APIs:
+DIMAGES = "/v1/get-data" -> (need some changes)
+CAT_REL = "/v1/category_relevance" -> imgrel_scores categories data 
+
+# /main_dir/app/routes/health.py
+API: /v1/health
+
+# /main_dir/app/utils/triplet_data.jsonl
+Finetuning dataset on 870 OOVs for SBERT model
+
+# /main_dir/app/utils/triplet_data_allowed_words_15.jsonl
+Finetuning dataset on 870 OOVs for SBERT model
+
+# /main_dir/app/utils/fine_tune_SBERT.ipynb
+1. Openai api for generating meaning of words
+2. Synthetic Data Generation
+3. Model comparison (pretrained vs overfitted finetuned(5) and pretrained vs finetuned(5))
+4. model finetuning code
+
+# Flags [api_flag]
+0 - No description
+2 - In description queue
+3 - Description done 
+4 - Company details api not available
+
+# Flag [api_flag_tfidf_finetune_15]
+0 - Didn't processed
+2 - processed and didn't moved to mongodb
+4 - product_url is NULL or contract do not have associated categories
+1 - processed and moved to mongodb
+
+# imgrel_scores table on "192.168.13.90"
+product_id
+docid
+product_url
+desc_api (Qwen description)
+api_created_datetime (Qwen description created datetime)
+cat_score_01 (category scoring based on pretrained model without tfidf weights)
+created_datetime (row created datetime)
+updated_datetime (row modified datetime)
+api_flag 
+contractid (Quality score)
+cat_score_01_tfidf (category scoring based on pretrained model with tfidf weights)
+api_flag_tfidf (flag status for cat_score_01_tfidf column, 0 not processed, 1 processed)
+cat_score_01_tfidf_finetune (category scoring based on finetuned model with tfidf weights and overfiited)
+api_flag_tfidf_finetune (flag status for cat_score_01_tfidf_finetune column, 0 not processed, 1 processed)
+->api_flag_tfidf_finetune_15 (flag status for cat_score_01_tfidf_finetune_15 column, 0 not processed, 1 processed)
+->cat_score_01_tfidf_finetune_15 (category scoring based on finetuned model with tfidf weights, finetuned on 6 words)
+
+# imgrel_verticals table on "192.168.13.90":
+docid
+vertical (name of vertical) 
+categories ()
+cat_process
+created_datetime
+updated_datetime
+city
+
+
+# imgrel_categories table on "192.168.13.90": (currently empty)
+category_id
+category
+vertical
+p_flag
+created_datetime
+updated_datetime
+
+# docker-compose.yml has following port exposed:
+      - "9094:5000"
+      - "8501:8501"
+      - "8502:8502"
+      - "8503:8503"
+For UI purpose
+
+
+Scripts:
+# parquet container
+
+# /main_dir/app/utils/verticals_to_score.py
+imgrel_vertials + tbl_catalogue_details -> imgrel_scores
+
+# /main_dir/app/subscriber/resp_img_desc_scores.py
+imgrel_scores -> queue
+
+# /main_dir/app/controllers/resp_img_desc.py
+queue -> imgrel_scores
+
+# /main_dirmain.py 
+score the docids using trained SBERT models
+
+# /main_dir/app/utils/mysql_to_mongodb.py
+MySQL table imgrel_scores -> tbl_catalogue_details_imgrel collection
+
+
+
